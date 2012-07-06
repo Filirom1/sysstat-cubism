@@ -6,16 +6,13 @@ cubism.sysstat = function(context, host) {
 
   source.metric = function(metric_id) {
     return context.metric(function(start, stop, step, callback) {
-      callbacks.push({metric_id: metric_id, callback: callback});
       loadData(host, function(stats) {
-        callbacks.forEach(function(o){
-          metric_id = o.metric_id;
-          callback = o.callback;
           if (!stats) return callback(new Error("unable to load data"));
           start = +start;
           stop = +stop;
           var  values    = [],
-          value     = stats[metric_id];
+          value     = parseFloat(stats[metric_id]);
+          console.log(metric_id + '   ' + value);
 
           // Cubism.js expects a value for every "slot" based on the `start` and `stop` parameters, because
           // it assumes a backend such as [_Graphite_](https://github.com/square/cubism/wiki/Graphite),
@@ -47,8 +44,6 @@ cubism.sysstat = function(context, host) {
 
           callback(null, values);
         });
-        callbacks = [];
-      });
     }, metric_id += "");
   };
 
@@ -56,7 +51,18 @@ cubism.sysstat = function(context, host) {
     return host;
   };
 
-  var loadData = _.debounce(d3.json, 100);
+  var loadData = function(host, cb){
+    if(!loadData.data) {
+      d3.json(host, function(data){
+        loadData.data = data;
+        cb.apply(this, arguments);
+        setTimeout(function(){ loadData.data = null; }, 100);
+      });
+    }else{
+      cb(loadData.data);
+    }
+
+  };
 
   return source;
 };
