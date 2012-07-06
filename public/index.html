@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Sysstat Cubism</title>
+<style> @import url(style.css); </style>
+<body>
+<script src="vendor/d3.v2.min.js"></script>
+<script src="vendor/cubism.v1.js"></script>
+<script src="vendor/jquery-1.7.2.min.js"></script>
+<script src="vendor/underscore-min.js"></script>
+<script src="js/cubism.sysstat.js"></script>
+<script>
+
+var context = cubism.context()
+  .serverDelay(0)
+  .clientDelay(0)
+  .step(1e4)
+  .size(1440),
+  sysstat = cubism.sysstat(context, "http://127.0.0.1:3000/sysstat");
+
+
+d3.select("body").selectAll(".axis")
+    .data(["top", "bottom"])
+  .enter().append("div")
+    .attr("class", function(d) { return d + " axis"; })
+    .each(function(d) { d3.select(this).call(context.axis().ticks(12).orient(d)); });
+
+d3.select("body").append("div")
+    .attr("class", "rule")
+    .call(context.rule());
+
+d3.select("body").selectAll(".horizon")
+    .data(['CPU_all_%usr', 'cswch/s'].map(sysstat.metric))
+  .enter().insert("div", ".bottom")
+    .attr("class", "horizon")
+    .call(context.horizon());
+
+context.on("focus", function(i) {
+  d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
+});
+</script>
